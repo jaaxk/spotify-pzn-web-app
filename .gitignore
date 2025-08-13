@@ -1,6 +1,7 @@
 .env
 
 # Cache files
+app/__pycache__/*
 .cache
 
 # macOS system files
@@ -8,6 +9,9 @@
 
 # Data directory contents (but not the folder itself)
 data/*
+
+# Python cache
+__pycache__/
 
 # Node modules
 node/node_modules

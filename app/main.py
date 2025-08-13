@@ -1,7 +1,7 @@
 # app/main.py
 import os
 import json
-from fastapi import FastAPI, Request, Depends, HTTPException
+from fastapi import FastAPI, Request, Depends, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from spotipy import oauth2
@@ -9,7 +9,7 @@ from spotipy.oauth2 import SpotifyOAuth
 import uuid
 from .db import SessionLocal, init_db
 from .models import User, Track
-from .tasks import update_user_library_task
+from .tasks import update_user_library_task, generate_playlist_task
 import redis
 import threading
 
@@ -27,7 +27,11 @@ r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 SPOTIFY_CLIENT_ID = os.environ.get("SPOTIFY_CLIENT_ID")
 SPOTIFY_CLIENT_SECRET = os.environ.get("SPOTIFY_CLIENT_SECRET")
 SPOTIFY_REDIRECT_URI = os.environ.get("SPOTIFY_REDIRECT_URI", "http://localhost:8000/auth/callback")
-SPOTIFY_SCOPES = os.environ.get("SPOTIFY_SCOPES", "user-library-read user-read-recently-played user-read-email")
+# Expanded scopes per requirements: playlist creation and playback control
+SPOTIFY_SCOPES = os.environ.get(
+    "SPOTIFY_SCOPES",
+    "user-library-read user-read-recently-played user-read-email playlist-modify-private playlist-modify-public user-modify-playback-state user-read-playback-state"
+)
 
 def get_db():
     db = SessionLocal()
@@ -149,35 +153,25 @@ def get_encoded_tracks(user_id: int, db = Depends(get_db)):
     ).all()
     return [{"id": t.id, "spotify_track_id": t.spotify_track_id, "name": t.name, "artist": t.artist} for t in tracks]
 
-@app.get("/api/similar/{user_id}/{track_id}")
-def get_similar(user_id: int, track_id: int, db = Depends(get_db)):
-    # fetch the track, ensure embedding exists and belongs to this user
-    from .models import user_tracks
-    target = db.query(Track).join(user_tracks).filter(
-        Track.id == track_id,
-        user_tracks.c.user_id == user_id,
-        Track.embedding != None
-    ).first()
-    if not target:
-        raise HTTPException(status_code=404, detail="Track not found or not encoded")
-    
-    # Use pgvector cosine distance operator '<=>' to find similar tracks for this user
-    from sqlalchemy import text
-    q = text("""
-       SELECT t.id, t.spotify_track_id, t.name, t.artist, t.embedding <=> :vec AS distance
-       FROM tracks t
-       JOIN user_tracks ut ON t.id = ut.track_id
-       WHERE t.embedding IS NOT NULL AND ut.user_id = :user_id AND t.id != :track_id
-       ORDER BY t.embedding <=> :vec
-       LIMIT 3
-    """)
-    # convert embedding to Postgres array string format
-    vec = list(target.embedding)
-    result = db.execute(q, {"vec": vec, "user_id": user_id, "track_id": track_id}).fetchall()
-    out = []
-    for row in result:
-        out.append({"id": row[0], "spotify_track_id": row[1], "name": row[2], "artist": row[3], "distance": float(row[4])})
-    # lower distance == more similar; convert to similarity as 1 - distance (approx)
-    for x in out:
-        x["similarity"] = 1.0 - x["distance"]
-    return out
+
+@app.get("/api/search_tracks")
+def search_tracks(q: str = Query("", min_length=1), limit: int = Query(10, ge=1, le=50), db = Depends(get_db)):
+    """Case-insensitive contains search across name OR artist, restricted to encoded tracks."""
+    term = f"%{q}%"
+    tracks = db.query(Track).filter(
+        Track.encoded == True,
+        (Track.name.ilike(term) | Track.artist.ilike(term))
+    ).limit(limit).all()
+    return [{"id": t.id, "spotify_track_id": t.spotify_track_id, "name": t.name, "artist": t.artist} for t in tracks]
+
+
+@app.post("/api/generate_playlist")
+def start_generate_playlist(user_id: int, seed_track_id: int, db = Depends(get_db)):
+    """Queue a playlist generation task and return task_id."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    task = generate_playlist_task.delay(user.refresh_token, user.id, seed_track_id)
+    return {"task_id": task.id}
+
+ 

@@ -8,12 +8,9 @@
 <body>
   <div class="container">
     <h2>Dashboard</h2>
-    <div id="player-area">
-      <h3>Spotify Player</h3>
-      <div id="spotify-embed">
-        <!-- We'll inject a Spotify embed iframe if we have a track -->
-        <iframe id="spotify-frame" src="" width="300" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
-      </div>
+    <div id="search-area">
+      <input id="track-search" type="text" placeholder="What's your vibe?" />
+      <ul id="search-results"></ul>
     </div>
 
     <div id="controls">
@@ -21,6 +18,19 @@
       <div id="progress" style="display:none;">
         <div id="progress-text"></div>
         <div id="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
+      </div>
+
+      <div id="playlist-progress" style="display:none; margin-top: 12px;">
+        <div id="playlist-progress-text"></div>
+        <div id="playlist-progress-bar"><div id="playlist-progress-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div id="player-area" style="margin-top:16px;">
+      <h3>Spotify Player</h3>
+      <div id="spotify-embed">
+        <!-- We'll inject a Spotify embed iframe if we have a track -->
+        <iframe id="spotify-frame" src="" width="300" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
       </div>
     </div>
 
