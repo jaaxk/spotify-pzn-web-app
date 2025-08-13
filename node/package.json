@@ -1,0 +1,11 @@
+{
+    "name": "spotify-preview-finder",
+    "version": "1.0.0",
+    "description": "Script to find spotify preview URLs for tracks",
+    "main": "preview_finder.js",
+    "dependencies": {
+        "dotenv": "^16.6.1",
+        "fetch-blob": "^4.0.0",
+        "spotify-preview-finder": "^2.1.0"
+    }
+}

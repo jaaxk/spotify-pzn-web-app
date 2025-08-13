@@ -1,0 +1,13 @@
+.env
+
+# Cache files
+.cache
+
+# macOS system files
+.DS_Store
+
+# Data directory contents (but not the folder itself)
+data/*
+
+# Node modules
+node/node_modules
