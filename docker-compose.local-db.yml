@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: spotify_app
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./app/scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
+    ports:
+      - "5432:5432"
+
+  app:
+    depends_on:
+      - postgres
+
+  worker:
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:
+

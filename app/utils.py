@@ -8,7 +8,6 @@ import subprocess
 import numpy as np
 
 AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
-USE_MINIO = os.environ.get("USE_MINIO", "false").lower() in ("1", "true")  # for local dev
 
 
 
@@ -40,14 +39,13 @@ def resample_to_24k(input_path, sample_rate=24000):
         cmd = [
             "ffmpeg",
             "-i", str(input_path),  # Input file
-            "-t", "15",  # Limit to first 15 seconds
             "-ar", str(sample_rate),  # Sample rate
             "-ac", "1",  # Mono audio
             "-f", "wav",  # Output format
             "-y",  # Overwrite output file if it exists
             "-loglevel", "warning",  # Only show warnings/errors
             str(output_path)
-        ]
+        ] #  "-t", "15",  # Limit to first 15 seconds
         
         # Run ffmpeg
         result = subprocess.run(cmd, capture_output=True, text=True)
