@@ -5,10 +5,9 @@ A full-stack application for personalized music analysis using Spotify's API and
 ## Features
 
 - Spotify OAuth integration
-- Music library analysis with MERT embeddings
+- Music library encoding with custom encoder model
 - Real-time processing with Celery workers
 - PostgreSQL with pgvector for similarity search
-- S3 storage for audio previews
 
 ## Setup
 
