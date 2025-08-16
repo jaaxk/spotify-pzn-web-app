@@ -1,13 +1,12 @@
 # Spotify Music Personalization
 
-A full-stack application for personalized music analysis using Spotify's API and MERT (Music Understanding Transformer).
+A full-stack application for personalized music analysis using Spotify's API and various customized audio encoder models (MERT, CLMR).
 
 ## Features
 
 - Spotify OAuth integration
 - Music library analysis with MERT embeddings
 - Real-time processing with Celery workers
-- WebSocket updates for live progress tracking
 - PostgreSQL with pgvector for similarity search
 - S3 storage for audio previews
 
